@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 from enum import Enum
 
 class JobStatusEnum(str, Enum):
@@ -7,10 +7,10 @@ class JobStatusEnum(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
+
 class ExtractionJobCreate(BaseModel):
-    source_db: str
-    query: str
+    endpoint_url: HttpUrl
 
 class ExtractionJobStatus(BaseModel):
-    id: int
+    id: str
     status: JobStatusEnum

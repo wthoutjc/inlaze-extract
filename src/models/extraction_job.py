@@ -1,9 +1,9 @@
-
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, String, Enum
 from src.database.base import Base
-import enum
+from enum import Enum as PyEnum
+import uuid
 
-class JobStatus(enum.Enum):
+class JobStatus(PyEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -12,7 +12,6 @@ class JobStatus(enum.Enum):
 class ExtractionJob(Base):
     __tablename__ = "extraction_jobs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    source_db = Column(String, index=True)
-    query = Column(String)
+    id = Column(String, primary_key=True, default=str(uuid.uuid4))
+    endpoint_url = Column(String, index=True)
     status = Column(Enum(JobStatus), default=JobStatus.PENDING)

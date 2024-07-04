@@ -3,10 +3,25 @@ from sqlalchemy.orm import Session
 from src.models.extraction_job import ExtractionJob, JobStatus
 from src.repositories.extraction_job_repository import ExtractionJobRepository
 from src.schemas.extraction_job import ExtractionJobCreate, ExtractionJobStatus
+import requests
+import pika
+import json
 
 class ExtractionService:
     def __init__(self, repository: ExtractionJobRepository):
         self.repository = repository
+
+    def _send_to_queue(self, message: dict):
+        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+        channel = connection.channel()
+        channel.queue_declare(queue='extraction_queue')
+
+        channel.basic_publish(
+            exchange='',
+            routing_key='extraction_queue',
+            body=json.dumps(message)
+        )
+        connection.close()
 
     def start_extraction(self, job_data: ExtractionJobCreate, db: Session) -> ExtractionJobStatus:
         job = ExtractionJob(
@@ -16,9 +31,18 @@ class ExtractionService:
         )
         job = self.repository.add(job)
 
-        # Lógica para ejecutar la extracción de datos aquí
+        try:
+            response = requests.get(job.endpoint_url)
+            response.raise_for_status()
+            job.status = JobStatus.COMPLETED
 
-        job.status = JobStatus.COMPLETED  # o JobStatus.FAILED si ocurre un error
+            self._send_to_queue({
+                'job_id': job.id,
+                'data': response.json()
+            })
+        except requests.RequestException:
+            job.status = JobStatus.FAILED
+
         self.repository.update(job)
         return ExtractionJobStatus(id=job.id, status=job.status)
 
