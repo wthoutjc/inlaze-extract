@@ -2,10 +2,12 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.database.base import Base
-from src.database.session import get_db
+from sqlalchemy.ext.declarative import declarative_base
+from src.database.database import Database
 from src.models.extraction_job import JobStatus
 import app
+
+Base = declarative_base()
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -19,7 +21,7 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
+app.dependency_overrides[Database.get_db] = override_get_db
 Base.metadata.create_all(bind=engine)
 client = TestClient(app)
 

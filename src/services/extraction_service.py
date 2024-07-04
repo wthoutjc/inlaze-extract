@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
 from src.models.extraction_job import ExtractionJob, JobStatus
 from src.repositories.extraction_job_repository import ExtractionJobRepository
 from src.schemas.extraction_job import ExtractionJobCreate, ExtractionJobStatus
@@ -17,19 +16,18 @@ class ExtractionService:
         channel.queue_declare(queue='extraction_queue')
 
         channel.basic_publish(
-            exchange='',
-            routing_key='extraction_queue',
+            exchange='extraction',
+            routing_key='extraction.queue',
             body=json.dumps(message)
         )
         connection.close()
 
-    def start_extraction(self, job_data: ExtractionJobCreate, db: Session) -> ExtractionJobStatus:
+    def start_extraction(self, job_data: ExtractionJobCreate) -> ExtractionJobStatus:
         job = ExtractionJob(
-            source_db=job_data.source_db,
-            query=job_data.query,
+            endpoint_url=str(job_data.endpoint_url),
             status=JobStatus.IN_PROGRESS
         )
-        job = self.repository.add(job)
+        self.repository.add(job)
 
         try:
             response = requests.get(job.endpoint_url)
@@ -46,7 +44,7 @@ class ExtractionService:
         self.repository.update(job)
         return ExtractionJobStatus(id=job.id, status=job.status)
 
-    def get_extraction_status(self, job_id: int, db: Session) -> ExtractionJobStatus:
+    def get_extraction_status(self, job_id: int) -> ExtractionJobStatus:
         job = self.repository.get(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Enum
-from src.database.base import Base
 from enum import Enum as PyEnum
 import uuid
+from src.database.base import Base
 
 class JobStatus(PyEnum):
     PENDING = "pending"

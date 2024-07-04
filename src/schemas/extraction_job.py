@@ -7,7 +7,6 @@ class JobStatusEnum(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
-
 class ExtractionJobCreate(BaseModel):
     endpoint_url: HttpUrl
 
