@@ -12,6 +12,6 @@ class JobStatus(PyEnum):
 class ExtractionJob(Base):
     __tablename__ = "extraction_jobs"
 
-    id = Column(String, primary_key=True, default=str(uuid.uuid4))
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     endpoint_url = Column(String, index=True)
     status = Column(Enum(JobStatus), default=JobStatus.PENDING)
