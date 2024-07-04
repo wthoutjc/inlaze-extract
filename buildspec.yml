@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo Installing dependencies...
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region <aws-region> | docker login --username AWS --password-stdin <ecr_id>.dkr.ecr.<aws-region>.amazonaws.com
+      - REPOSITORY_URI=<ecr_id>.dkr.ecr.<aws-region>.amazonaws.com/repository
+      - pip install --upgrade aws-sam-cli
+  build:
+    commands:
+      - echo Build started on `date`
+      - docker build --rm -t $REPOSITORY_URI:extract-service .
+      - docker tag $REPOSITORY_URI:extract-service $REPOSITORY_URI:extract-service
+      - sam build --use-container --build-image $REPOSITORY_URI:extract-service
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:extract-service
+      - sam package --output-template-file packaged.yaml --image-repository $REPOSITORY_URI --region <aws-region> --s3-bucket lambda-extract
+      - aws cloudformation deploy --template-file packaged.yaml --stack-name extract-service --capabilities CAPABILITY_IAM --region <aws-region>
