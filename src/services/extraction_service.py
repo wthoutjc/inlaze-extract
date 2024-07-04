@@ -13,6 +13,7 @@ class ExtractionService:
     def _send_to_queue(self, message: dict):
         connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
         channel = connection.channel()
+        channel.exchange_declare(exchange='extraction', exchange_type='direct')
         channel.queue_declare(queue='extraction_queue')
 
         channel.basic_publish(
